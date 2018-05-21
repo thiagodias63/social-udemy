@@ -18,7 +18,6 @@ export default {
   props: ['imagem', 'titulo', 'texto'],
   data () {
     return {
-
     }
   }
 }

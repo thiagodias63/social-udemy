@@ -25,7 +25,6 @@
 
 <script>
 import SiteTemplate from '@/templates/SiteTemplate'
-import axios from 'axios'
 
 export default {
   name: 'Perfil',
@@ -44,11 +43,11 @@ export default {
     SiteTemplate
   },
   created () {
-    let usuarioAux = sessionStorage.getItem('usuario')
+    let usuarioAux = this.$store.getters.getUsuario
     if (usuarioAux) {
-      this.usuario = JSON.parse(usuarioAux)
+      this.usuario = this.$store.getters.getUsuario
     } else {
-      this.$route.push('/login')
+      this.$router.push('/login')
     }
   },
   methods: {
@@ -64,7 +63,7 @@ export default {
       reader.readAsDataURL(arquivo[0])
     },
     alterar () {
-      axios.put('http://localhost:8000/api/atualizar', {
+      this.$http.put(this.$url + '/api/atualizar', {
         email: this.usuario.email,
         password: this.usuario.password,
         password_confirmation: this.usuario.password_confirmation,
@@ -73,18 +72,20 @@ export default {
       },
       {
         'headers': {
-          'authorization': 'Bearer ' + this.usuario.token
+          'authorization': 'Bearer ' + this.$store.getters.getToken
         }
       }).then(response => {
-        if (response.data.token) {
-          sessionStorage.setItem('usuario', JSON.stringify(response.data))
+        if (response.data.status) {
+          this.$store.commit('setUsuario', response.data.usuario)
+          sessionStorage.setItem('usuario', JSON.stringify(response.data.usuario))
           alert('Perfil atualizado')
-        } else {
+        } else if (response.data.status === false && response.data.validacao) {
           let erros = ''
-          for (let erro of Object.values(response.data)) { // transforma response.data em um array de valores
+          for (let erro of Object.values(response.data.erros)) { // transforma response.data em um array de valores
             erros += erro + ' '
           }
           alert(erros)
+          console.log(erros)
         }
       }).catch(e => {
         console.log(e)

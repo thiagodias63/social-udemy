@@ -1,11 +1,14 @@
 <template>
   <div class="row">
     <GridVue class="input-field" tamanho="12">
-      <textarea v-model="conteudo" class="materialize-textarea"></textarea>
+      <input type="text" v-model="conteudo.titulo">
+      <textarea v-if="conteudo.titulo" placeholder="Conteúdo" v-model="conteudo.texto" class="materialize-textarea"></textarea>
       <label>O que está acontecendo?</label>
+      <input v-if="conteudo.titulo && conteudo.texto" type="text" placeholder="Link" v-model="conteudo.link">
+      <input v-if="conteudo.titulo && conteudo.texto" type="text" placeholder="Url da imagem" v-model="conteudo.imagem">
     </GridVue>
-    <p>
-      <GridVue v-if="conteudo" class="btn waves-effect waves-light" tamanho="2 offset-s10"><a v-on:click="cadastrarConteudo()">Publicar</a></GridVue>
+    <p class="right-align">
+      <button v-if="conteudo.titulo && conteudo.texto" @click="cadastrarConteudo()" class="btn waves-effect waves-light">Publicar</button>
     </p>
     <ErrosLista :errors="errors"/>
   </div>
@@ -14,19 +17,16 @@
 <script>
 import GridVue from '@/components/layout/GridVue'
 import ErrosLista from '@/components/layout/ErrosLista'
-import axios from 'axios'
 
 export default {
   name: 'PublicarConteudoVue',
   data () {
     return {
-      conteudo: '',
-      usuario: {
-        email: '',
-        password: '',
-        password_confirmation: '',
-        name: '',
-        image: ''
+      conteudo: {
+        titulo: '',
+        texto: '',
+        link: '',
+        imagem: ''
       },
       errors: []
     }
@@ -36,17 +36,30 @@ export default {
     ErrosLista
   },
   created () {
-    this.usuario = JSON.parse(sessionStorage.getItem('usuario'))
   },
   methods: {
     cadastrarConteudo () {
-      axios.post('http://localhost:8000/api/cadastrarConteudo'), ({
-        texto: this.conteudo,
-        titulo: 'Teste',
-        user: this.usuario.id,
-        link: 'nulo'
+      this.$http.post(this.$url + '/api/conteudo/cadastrar', {
+        titulo: this.conteudo.titulo,
+        texto: this.conteudo.texto,
+        link: this.conteudo.link,
+        imagem: this.conteudo.imagem
+      },
+      {
+        'headers': {
+          'authorization': 'Bearer ' + this.$store.getters.getToken
+        }
       }).then(response => {
-        console.log(response.data)
+        if (response.data.status) {
+          // console.log(response.data)
+          this.conteudo = {
+            titulo: '',
+            texto: '',
+            link: '',
+            imagem: ''
+          }
+          this.$store.commit('setConteudosLinhaTempo', response.data.conteudos.data)
+        }
       }).catch(e => {
         this.errors.push(e)
       })

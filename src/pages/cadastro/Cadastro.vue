@@ -11,19 +11,12 @@
         <input type="password" v-model="usuario.password_confirmation" placeholder="Confirme sua Senha:">
         <button class="btn red" v-on:click="cadastro()">Cadastrar</button>
         <router-link class="btn grey" to="/login">Já possuo uma conta</router-link>
-
-        <ul v-if="errors && errors.length">
-          <li v-for="error of errors">
-            {{error.message}}
-          </li>
-        </ul>
     </span>
   </LoginTemplate>
 </template>
 
 <script>
 import LoginTemplate from '@/templates/LoginTemplate'
-import axios from 'axios'
 
 export default {
   name: 'Cadastro',
@@ -43,19 +36,24 @@ export default {
   },
   methods: {
     cadastro () {
-      console.log(this.usuario)
-      axios.post('http://localhost:8000/api/cadastro', {
+      // console.log(this.usuario)
+      this.$http.post(this.$url + '/api/cadastro', {
         email: this.usuario.email,
         password: this.usuario.password,
         password_confirmation: this.usuario.password_confirmation,
         name: this.usuario.name
       }).then(response => {
         console.log(response)
-        if (response.data.token) {
-          sessionStorage.setItem('usuario', JSON.stringify(response.data))
+        if (response.data.status) {
+          this.$store.commit('setUsuario', response.data.usuario)
+          sessionStorage.setItem('usuario', JSON.stringify(response.data.usuario))
           this.$router.push('/')
-        } else if (response.data.status === false) {
-          alert('Erro no cadastro')
+        } else if (response.data.status === false && response.data.validacao) {
+          let erros = ''
+          for (let erro of Object.values(response.data.erros)) { // transforma response.data em um array de valores
+            erros += erro + ' '
+          }
+          alert('Erro no cadastro' + erros)
         }
       }).catch(e => {
         console.log(e) // this.errors.push(e)

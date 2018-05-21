@@ -35,7 +35,6 @@ export default {
   props: ['perfil', 'nome', 'data'],
   data () {
     return {
-
     }
   },
   components: {

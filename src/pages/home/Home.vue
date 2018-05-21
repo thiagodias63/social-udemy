@@ -16,16 +16,17 @@
       </span>
       <span slot="principal">
         <PublicarConteudoVue />
-        <ErrosLista :errors="errors"/>
-        <span v-if="posts && posts.length">
-          <span v-for="post of posts">
-            <CardConteudoVue :perfil="usuario.image"
-            :nome="usuario.name"
-            :data="post.data">
-            <CardDetalheVue imagem="https://i.ytimg.com/vi/NJi6ts5D5s8/maxresdefault.jpg" :texto="post.texto" :titulo="post.titulo"></CardDetalheVue>
-            </CardConteudoVue>
-          </span>
-        </span>
+        <CardConteudoVue v-for="conteudo in listaConteudosLinhaTempo"
+          :key="conteudo.id"
+          :perfil="conteudo.user.image"
+          :nome="conteudo.user.name"
+          :data="conteudo.user.created_at">
+          <CardDetalheVue
+          :imagem="conteudo.image"
+          :titulo="conteudo.titulo"
+          :texto="conteudo.texto">
+          </CardDetalheVue>
+        </CardConteudoVue>
       </span>
     </SiteTemplate>
   </span>
@@ -38,7 +39,6 @@ import ErrosLista from '@/components/layout/ErrosLista'
 import CardConteudoVue from '@/components/social/CardConteudoVue'
 import PublicarConteudoVue from '@/components/social/PublicarConteudoVue'
 import CardDetalheVue from '@/components/social/CardDetalheVue'
-import axios from 'axios'
 
 export default {
   name: 'Home',
@@ -51,17 +51,17 @@ export default {
         name: '',
         image: ''
       },
-      posts: [],
+      conteudos: [],
       errors: []
     }
   },
   created () {
-    let usuarioAux = sessionStorage.getItem('usuario')
+    let usuarioAux = this.$store.getters.getUsuario
     if (usuarioAux) {
-      this.usuario = JSON.parse(usuarioAux)
+      this.usuario = this.$store.getters.getUsuario
       this.listarConteudos()
     } else {
-      this.$route.push('/login')
+      this.$router.push('/login')
     }
   },
   components: {
@@ -74,13 +74,25 @@ export default {
   },
   methods: {
     listarConteudos () {
-      axios.post('http://localhost:8000/api/listarConteudo', {
-        user: this.usuario.id
+      this.$http.get(this.$url + '/api/conteudo/listar', {
+        'headers': {
+          'authorization': 'Bearer ' + this.$store.getters.getToken
+        }
       }).then(response => {
-        console.log(response.data)
+        if (response.data.status) {
+          console.log(response.data.conteudos.data)
+          // this.conteudos = response.data.conteudos.data
+          this.$store.commit('setConteudosLinhaTempo', response.data.conteudos.data)
+          // this.conteudos = this.$store.getters.getConteudosLinhaTempo
+        }
       }).catch(e => {
         this.errors.push(e)
       })
+    }
+  },
+  computed: {
+    listaConteudosLinhaTempo () {
+      return this.$store.getters.getConteudosLinhaTempo
     }
   }
 }

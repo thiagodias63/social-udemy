@@ -15,7 +15,6 @@
 
 <script>
 import LoginTemplate from '@/templates/LoginTemplate'
-import axios from 'axios'
 
 export default {
   name: 'Login',
@@ -24,7 +23,8 @@ export default {
       usuario: {
         email: '',
         password: ''
-      }
+      },
+      erros: ''
     }
   },
   components: {
@@ -32,21 +32,23 @@ export default {
   },
   methods: {
     logar () {
-      axios.post('http://localhost:8000/api/login', {
+      this.$http.post(this.$url + '/api/login', {
         email: this.usuario.email,
         password: this.usuario.password
       }).then(response => {
-        if (response.data.token) {
-          sessionStorage.setItem('usuario', JSON.stringify(response.data))
+        if (response.data.status) {
+          this.$store.commit('setUsuario', response.data.usuario)
+          sessionStorage.setItem('usuario', JSON.stringify(response.data.usuario))
           this.$router.push('/')
-        } else if (response.data.status === false) {
-          alert('Login não existe')
-        } else {
-          let erros = ''
-          for (let erro of Object.values(response.data)) { // transforma response.data em um array de valores
-            erros += erro + ' '
+        } else if (response.data.status === false && response.data.validacao) {
+          // alert('Login não existe')
+          // let erros = ''
+          for (let erro of Object.values(response.data.erros)) { // transforma response.data em um array de valores
+            this.erros += erro + ' '
           }
-          alert(erros)
+          alert('Erro no cadastro' + this.erros)
+        } else {
+          alert(this.erros)
         }
       }).catch(e => {
         console.log(e)
