@@ -34,10 +34,24 @@ var store = {
     },
     setConteudosLinhaTempo (state, c) {
       state.conteudosLinhaTempo = c
+    },
+    setPaginacaoConteudosLinhaTempo (state, lista) {
+      for (let item of lista) {
+        state.conteudosLinhaTempo.push(item)
+      }
     }
   }
 }
-
+Vue.directive('scroll', {
+  inserted: (el, binding) => {
+    let f = (evt) => {
+      if (binding.value(evt, el)) {
+        window.removeEventListener('scroll', f)
+      }
+    }
+    window.addEventListener('scroll', f)
+  }
+})
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

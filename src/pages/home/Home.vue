@@ -18,15 +18,23 @@
         <PublicarConteudoVue />
         <CardConteudoVue v-for="conteudo in listaConteudosLinhaTempo"
           :key="conteudo.id"
+          :id="conteudo.id"
           :perfil="conteudo.user.image"
           :nome="conteudo.user.name"
-          :data="conteudo.user.created_at">
+          :data="conteudo.data"
+          :totalCurtidas="conteudo.total_curtidas"
+          :totalComentarios="conteudo.total_comentarios"
+          :comentarios="conteudo.comentarios"
+          :curtiuConteudo="conteudo.curtiu">
           <CardDetalheVue
           :imagem="conteudo.image"
           :titulo="conteudo.titulo"
-          :texto="conteudo.texto">
+          :texto="conteudo.texto"
+          :link="conteudo.link">
           </CardDetalheVue>
         </CardConteudoVue>
+        <div v-scroll="handleScroll"></div>
+        <!-- <button v-if="urlProximaPagina" type="button" class="btn btn-blue" @click="carregaPaginacao()">More..</button> -->
       </span>
     </SiteTemplate>
   </span>
@@ -52,7 +60,9 @@ export default {
         image: ''
       },
       conteudos: [],
-      errors: []
+      errors: [],
+      urlProximaPagina: null,
+      pararScroll: false
     }
   },
   created () {
@@ -80,14 +90,40 @@ export default {
         }
       }).then(response => {
         if (response.data.status) {
-          console.log(response.data.conteudos.data)
+          console.log(response.data)
           // this.conteudos = response.data.conteudos.data
           this.$store.commit('setConteudosLinhaTempo', response.data.conteudos.data)
+          this.urlProximaPagina = response.data.conteudos.next_page_url
           // this.conteudos = this.$store.getters.getConteudosLinhaTempo
         }
       }).catch(e => {
         this.errors.push(e)
       })
+    },
+    carregaPaginacao () {
+      if (!this.urlProximaPagina) {
+        return false
+      }
+      this.$http.get(this.urlProximaPagina, {
+        'headers': {
+          'authorization': 'Bearer ' + this.$store.getters.getToken
+        }
+      }).then(response => {
+        if (response.data.status) {
+          console.log(response.data.conteudos.data)
+          this.$store.commit('setPaginacaoConteudosLinhaTempo', response.data.conteudos.data)
+          this.urlProximaPagina = response.data.conteudos.next_page_url
+          this.pararScroll = false
+        }
+      }).catch(e => {
+        this.errors.push(e)
+      })
+    },
+    handleScroll () {
+      if (window.scrollY >= (document.body.clientHeight / 1.577) && !this.pararScroll) {
+        this.carregaPaginacao()
+        this.pararScroll = true
+      }
     }
   },
   computed: {
